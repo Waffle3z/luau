@@ -2730,19 +2730,6 @@ Inference ConstraintGenerator::check(const ScopePtr& scope, AstExprConstantStrin
     if (largeTableDepth > 0)
         return Inference{builtinTypes->stringType};
 
-    // If the expected type is a singleton string with the same value, return it directly
-    if (expectedType)
-    {
-        if (auto st = get<SingletonType>(follow(*expectedType)))
-        {
-            if (auto ss = get<StringSingleton>(st))
-            {
-                if (std::string{string->value.data, string->value.size} == ss->value)
-                    return Inference{*expectedType};
-            }
-        }
-    }
-
     TypeId freeTy = nullptr;
     if (FFlag::LuauEagerGeneralization4)
     {
@@ -3512,32 +3499,7 @@ Inference ConstraintGenerator::check(const ScopePtr& scope, AstExprTable* expr, 
         // Expected types are threaded through table literals separately via the
         // function matchLiteralType.
 
-        std::optional<TypeId> expectedTypeForValue = std::nullopt;
-        if (expectedType)
-        {
-            if (auto expectedTableTy = get<TableType>(follow(*expectedType)))
-            {
-                if (item.key && item.key->is<AstExprConstantString>())
-                {
-                    std::string keyStr{item.key->as<AstExprConstantString>()->value.data, item.key->as<AstExprConstantString>()->value.size};
-                    auto it = expectedTableTy->props.find(keyStr);
-                    if (it != expectedTableTy->props.end())
-                    {
-                        expectedTypeForValue = it->second.readTy;
-                    }
-                    else if (expectedTableTy->indexer && isString(expectedTableTy->indexer->indexType))
-                    {
-                        expectedTypeForValue = expectedTableTy->indexer->indexResultType;
-                    }
-                }
-                else if (!item.key && expectedTableTy->indexer)
-                {
-                    expectedTypeForValue = expectedTableTy->indexer->indexResultType;
-                }
-            }
-        }
-
-        TypeId itemTy = check(scope, item.value, expectedTypeForValue).ty;
+        TypeId itemTy = check(scope, item.value).ty;
 
         if (item.key)
         {

@@ -6109,10 +6109,13 @@ TEST_CASE_FIXTURE(Fixture, "oss_1924")
     };
 
     CheckResult result = check(R"(
-        local t: { [string]: "s" } = {
+        local t1: { [string]: "s" } = {
             key = "s",
             other_key = "t",
         }
+        local t2: {[string]: "a" | "b"} = { a = "a", b = "b" }
+        local t3: {[string]: "a" | true} = { a = "a", b = true }
+        local t4: {[string]: "a" | nil} = { a = "a" }
     )");
     LUAU_REQUIRE_ERROR_COUNT(1, result);
     auto err = get<TypeMismatch>(result.errors[0]);
